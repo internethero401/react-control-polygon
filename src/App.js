@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 
 function App() {
+  const [selectedImage, setSelectedImage] = useState(null);  // 表示する画像fileを保管
   const [mode, setMode] = useState(true);  // true: 点追加モード, false: 点の編集モード
   const [points, setPoints] = useState([]);
   const [currentPoint, setCurrentPoint] = useState({ x: null, y: null })
@@ -26,13 +27,38 @@ function App() {
     setKeepIdx(null)
   }
 
+  // canvasの背景画像を動的に更新
+  const handleFileChange = (event) => {
+    const file = event.target.files[0]; // file選択
+    if (file) {
+      // FileReaderを使用して画像を読み込む
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        // Canvasのスタイルとして新しい画像を設定
+        const canvas = canvasRef.current;
+        if (canvas) {
+          // CSSのbackgroundImageプロパティを使用して画像を設定
+          canvas.style.backgroundImage = `url('${e.target.result}')`;
+          canvas.style.backgroundSize = 'cover'; // 背景画像がCanvasを完全に覆うように設定
+          canvas.style.backgroundPosition = 'center'; // 背景画像が中央に配置されるように設定
+        }
+        setSelectedImage(e.target.result); // この行は選択した画像データを状態に保存するために必要かもしれませんが、CSS背景としては不要です
+      };
+      reader.readAsDataURL(file);
+    }
+    setCurrentPoint({ x: null, y: null });
+    setPoints([]);
+  };
+
   // 押した場所をcueerentPointにupdateする
   const handleClick = (event) => {
+    if (selectedImage !== null) {
       const canvas = canvasRef.current;
       const rect = canvas.getBoundingClientRect();
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
       setCurrentPoint({ x, y });
+    }
   };
 
   // 点を延長線に対して垂直に下した交点が線の上にあるかを判定する(useEffectの中で使う)
@@ -54,85 +80,90 @@ function App() {
     }
   }
 
+
   // ☆useEffectt1 描画
   useEffect(() => {
-    // canvasの初期設定
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (points.length > 0) {
-      ctx.moveTo(points[0].x, points[0].y);  // ペンを最初の位置に持っていく
-      // 線描画
-      ctx.lineWidth = 0.5;
-      ctx.beginPath();
-      for (let i = 0; i <= points.length; i++) {  // ここから5行は足りないpoints[0]からpoints[-1]を繋ぐため
-        let j = i;
-        if (i === points.length) {
-          j = 0;
-        }
-        ctx.lineTo(points[j].x, points[j].y);
-        ctx.strokeStyle = 'black'; 
-      }
-      ctx.stroke();  
-
-      // 点描画
-      points.forEach((point, index) => {
-        ctx.lineWidth = 3;
+    if (selectedImage !== null) {
+      // canvasの初期設定
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (points.length > 0) {
+        ctx.moveTo(points[0].x, points[0].y);  // ペンを最初の位置に持っていく
+        // 線描画
+        ctx.lineWidth = 0.5;
         ctx.beginPath();
-        ctx.arc(point.x, point.y, 5, 0, 2 * Math.PI);  // 点を描画
-        // 編集中の点だけ青色に設定
-        if(isMoving === true){
-          if(index === keepIdx){
-            ctx.strokeStyle = 'red'; 
-          } else {
-            ctx.strokeStyle = 'black'; 
+        for (let i = 0; i <= points.length; i++) {  // ここから5行は足りないpoints[0]からpoints[-1]を繋ぐため
+          let j = i;
+          if (i === points.length) {
+            j = 0;
           }
+          ctx.lineTo(points[j].x, points[j].y);
+          ctx.strokeStyle = 'white'; 
         }
-        ctx.stroke();
-      });
+        ctx.stroke();  
+
+        // 点描画
+        points.forEach((point, index) => {
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(point.x, point.y, 5, 0, 2 * Math.PI);  // 点を描画
+          // 編集中の点だけ青色に設定
+          if(isMoving === true){
+            if(index === keepIdx){
+              ctx.strokeStyle = 'red'; 
+            } else {
+              ctx.strokeStyle = 'white'; 
+            }
+          }
+          ctx.stroke();
+        });
+      }
     }
-  }, [points, currentPoint, isMoving, keepIdx]);
+  }, [selectedImage, points, currentPoint, isMoving, keepIdx]);
 
 
   // ☆useEffectt2 mode:trueの時
   useEffect(() => {
-    console.log(points)
-    // currentPointがpoints配列にすでに存在するかチェック
-    const pointExists = points.some(point => point.x === currentPoint.x && point.y === currentPoint.y);
-    // currnentPointがpoints配列に無かったら
-    if (mode === true){
-      if (!pointExists) {
-        // currentPointが有効な時だけ(nullじゃなかったら)
-        if (currentPoint.x != null && currentPoint.y != null) {
-          // points配列が0か1なら配列の最後に追加
-          if (points.length < 2) {
-            setPoints([...points, currentPoint]);
-            // ☆points配列が2以上なら追加する適正な場所を探し入れる
-          } else {
-            let minBetweenLength = Infinity;
-            let minBetweenLengthIdx = 0;
-            for (let i = 0; i < points.length; i++) {  // ここから5行はpoints[0]からpoints[-1]の線を認識するため. ループ回数◎
-              let j = i + 1
-              if (j === points.length) {
-                j = 0
+    if (selectedImage !== null) {
+      console.log(points)
+      // currentPointがpoints配列にすでに存在するかチェック
+      const pointExists = points.some(point => point.x === currentPoint.x && point.y === currentPoint.y);
+      // currnentPointがpoints配列に無かったら
+      if (mode === true){
+        if (!pointExists) {
+          // currentPointが有効な時だけ(nullじゃなかったら)
+          if (currentPoint.x != null && currentPoint.y != null) {
+            // points配列が0か1なら配列の最後に追加
+            if (points.length < 2) {
+              setPoints([...points, currentPoint]);
+              // ☆points配列が2以上なら追加する適正な場所を探し入れる
+            } else {
+              let minBetweenLength = Infinity;
+              let minBetweenLengthIdx = 0;
+              for (let i = 0; i < points.length; i++) {  // ここから5行はpoints[0]からpoints[-1]の線を認識するため. ループ回数◎
+                let j = i + 1
+                if (j === points.length) {
+                  j = 0
+                }
+                let result = judgExist(points[i], points[j], currentPoint);
+                let b = -1
+                let distance = Math.abs(result.a * currentPoint.x + b * currentPoint.y + result.c) / Math.sqrt(result.a * result.a + b * b) - result.deDistance;  // 線と直線の方程式 - 関数の結果77       
+                if (distance < minBetweenLength) {
+                  minBetweenLength = distance;
+                  minBetweenLengthIdx = i;
+                }
               }
-              let result = judgExist(points[i], points[j], currentPoint);
-              let b = -1
-              let distance = Math.abs(result.a * currentPoint.x + b * currentPoint.y + result.c) / Math.sqrt(result.a * result.a + b * b) - result.deDistance;  // 線と直線の方程式 - 関数の結果77       
-              if (distance < minBetweenLength) {
-                minBetweenLength = distance;
-                minBetweenLengthIdx = i;
-              }
+              const newPoints = [...points];  // 一度新しい変数newPointsを作ってpointsの内容をコピー
+              newPoints.splice(minBetweenLengthIdx + 1, 0, currentPoint);  // 挿入
+              setPoints(newPoints);
             }
-            const newPoints = [...points];  // 一度新しい変数newPointsを作ってpointsの内容をコピー
-            newPoints.splice(minBetweenLengthIdx + 1, 0, currentPoint);  // 挿入
-            setPoints(newPoints);
           }
         }
       }
     }
-  }, [mode, points, currentPoint]);
+  }, [selectedImage, mode, points, currentPoint]);
 
 
   // ☆useEffectt3 mode:falseの時
@@ -183,11 +214,14 @@ function App() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-      <div tyle={{ display: "flex"}}>
-        <button id="myButton1" onClick={changeMode}> {mode ? "Add Points" : "Edit Points"} </button>
-        <button id="myButton2" onClick={allDelete}> All Delete </button>
-      </div>
+      {selectedImage !== null && (
+        <div tyle={{ display: "flex"}}>
+          <button id="myButton1" onClick={changeMode}> {mode ? "Add Points" : "Edit Points"} </button>
+          <button id="myButton2" onClick={allDelete}> All Delete </button>
+        </div>
+      )}
       <canvas ref={canvasRef} width="600" height="400" style={{ outline: "1px solid #000" }} onClick={handleClick}></canvas>
+      <input type="file"   onChange={handleFileChange} accept="image/*"/>
     </div>
   );
 }
@@ -195,6 +229,6 @@ export default App;
 
 /*
  課題↓
- 2.1. ドラック＆ドロップした場合currentPointsはドロップした所の位置のみ分かるため初めのドラック地点が分からない.
- 2.2. 利用者がどの点をドラッグするか押してからドロップする必要が出てくる.
+ 1. All Deleteで画像も消せるようにしたい
+ 2. 画像をcanvasに適合させる
 */
