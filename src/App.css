@@ -1,10 +1,21 @@
 #myButton1{
-  width: 80px;
-  height: 40px;
+  width: 250px;
+  height: 80px;
+  font-size: 35px;
+  border-width: 3px;
+  border-radius: 10px;
+  background: #0085FF;
+  margin-top: 20px;
+  cursor: pointer;
 }
 
 #myButton2{
-  width: 80px;
-  height: 40px;
-  color: red;
+  width: 250px;
+  height: 80px;
+  border-width: 3px;
+  font-size: 35px;
+  border-radius: 10px;
+  background: red;
+  margin-top: 20px;
+  cursor: pointer;
 }

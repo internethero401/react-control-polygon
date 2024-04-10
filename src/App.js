@@ -74,7 +74,7 @@ function App() {
     if (((point1.x <= f && f <= point2.x) || (point2.x <= f && f <= point1.x)) &&
       ((point1.y <= g && g <= point2.y) || (point2.y <= g && g <= point1.y))) {
         // ☆☆☆deDistanceの値の調整必要☆☆☆
-      return { deDistance: 150, a, c };  // ある時は距離を少しマイナス
+      return { deDistance: 400, a, c };  // ある時は距離を少しマイナス
     } else {
       return { deDistance: 0, a, c };  // ない時は距離はそのまま
     }
@@ -92,7 +92,7 @@ function App() {
       if (points.length > 0) {
         ctx.moveTo(points[0].x, points[0].y);  // ペンを最初の位置に持っていく
         // 線描画
-        ctx.lineWidth = 0.5;
+        ctx.lineWidth = 2;
         ctx.beginPath();
         for (let i = 0; i <= points.length; i++) {  // ここから5行は足りないpoints[0]からpoints[-1]を繋ぐため
           let j = i;
@@ -100,7 +100,7 @@ function App() {
             j = 0;
           }
           ctx.lineTo(points[j].x, points[j].y);
-          ctx.strokeStyle = 'white'; 
+          ctx.strokeStyle = 'black'; 
         }
         ctx.stroke();  
 
@@ -109,12 +109,12 @@ function App() {
           ctx.lineWidth = 3;
           ctx.beginPath();
           ctx.arc(point.x, point.y, 5, 0, 2 * Math.PI);  // 点を描画
-          // 編集中の点だけ青色に設定
+          // 編集中の点だけ赤色に設定
           if(isMoving === true){
             if(index === keepIdx){
               ctx.strokeStyle = 'red'; 
             } else {
-              ctx.strokeStyle = 'white'; 
+              ctx.strokeStyle = 'black'; 
             }
           }
           ctx.stroke();
@@ -213,15 +213,17 @@ function App() {
 
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-      {selectedImage !== null && (
-        <div tyle={{ display: "flex"}}>
-          <button id="myButton1" onClick={changeMode}> {mode ? "Add Points" : "Edit Points"} </button>
-          <button id="myButton2" onClick={allDelete}> All Delete </button>
-        </div>
-      )}
-      <canvas ref={canvasRef} width="600" height="400" style={{ outline: "1px solid #000" }} onClick={handleClick}></canvas>
-      <input type="file"   onChange={handleFileChange} accept="image/*"/>
+    <div style={{ display: "flex", margin: "50px" }}>
+      <canvas ref={canvasRef} width="800" height="450" style={{ outline: "1px solid #000" }} onClick={handleClick}></canvas>
+      <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", marginLeft: "90px" }}>
+        <input type="file" onChange={handleFileChange} accept="image/*"/>
+        {selectedImage !== null && (
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <button id="myButton1" onClick={changeMode}> {mode ? "Add Points" : "Edit Points"} </button>
+            <button id="myButton2" onClick={allDelete}> All Delete </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
